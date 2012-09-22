@@ -50,6 +50,17 @@ public class TelnetServer {
 		}
 		return sbuf.toString();
 	}
+
+	public void printDetails()
+	{
+		try {
+			InetAddress addr = InetAddress.getLocalHost();
+
+			System.out.printf( "Server Started at : %s\n", addr );
+
+		} catch (UnknownHostException e) {
+		}
+	}
     // Listen for incoming connections and handle them
 
     public void runServer() {
@@ -58,7 +69,10 @@ public class TelnetServer {
 		clientMap = new HashMap<>();
         try {
             ServerSocket listener = new ServerSocket(port);
+
             Socket server;
+
+	        printDetails();
 
             while ((i++ < maxConnections) || (maxConnections == 0)) {
                 
