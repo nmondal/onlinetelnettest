@@ -14,8 +14,8 @@ public class SimpleTimerTask extends TimerTask {
 	public static long SECTION_TIMEOUT_IN_MINUTES =
 			PropertyHelper.serverProperties.getLongDefault("SECTION_TIMEOUT_IN_MINUTES", 20);
 
-
-	public static final long MAX_DIFF = SECTION_TIMEOUT_IN_MINUTES * 60 * 60 * 1000;
+	//This only takes in milli seconds,
+	public static final long MAX_DIFF = SECTION_TIMEOUT_IN_MINUTES * 60 * 1000;
 
 
 	private long startTime;
