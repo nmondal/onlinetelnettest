@@ -1,8 +1,6 @@
 package telnetd.communicator;
 
-import telnetd.PropertyHelper;
 import telnetd.Question;
-
 import java.io.*;
 import java.net.Socket;
 
@@ -95,10 +93,17 @@ public class QuestionCommunicator extends Communicator {
 			goNext();
 		} else {
 			try {
-				answers[cur_ans_no] = input.charAt(0);
+				answers[cur_ans_no] = input.charAt(input.length() - 1);
+				out.printf("Ans. to Question %d is set to : %c\r\n" ,
+						cur_ans_no +1 ,answers[cur_ans_no] );
+				goNext();
 			} catch (Exception e) {
+				out.println("Invalid Input.");
 			}
-			goNext();
+		}
+		if ( cur_ans_no < 0 || cur_ans_no >= answers.length)
+		{
+			return "Please select a question no, or 'n' or 'p' \r\n" ;
 		}
 		return Question.questionSections.get(this.currentSection).get(cur_ans_no).toString();
 
@@ -122,7 +127,9 @@ public class QuestionCommunicator extends Communicator {
 		buf.append("\r\n");
 		buf.append("To Start the test press  'n' , for the first question.");
 		buf.append("\r\n");
-
+		buf.append( String.format( "Timeout for Each Section is %d minute[s]",
+				SimpleTimerTask.SECTION_TIMEOUT_IN_MINUTES) );
+		buf.append("\r\n");
 		return buf.toString();
 	}
 
