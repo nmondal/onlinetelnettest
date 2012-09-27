@@ -17,6 +17,14 @@ public final class PropertyHelper {
 		return dateFormat.format( new Date() );
 
 	}
+	public static String getTimeStampAsValidFileName()
+	{
+		String ret =  getTimeStamp();
+		ret = ret.replace( " ","_");
+		ret = ret.replace( ":","-");
+		return ret;
+	}
+
 
 	public PropertyHelper(String file) {
 		try {
