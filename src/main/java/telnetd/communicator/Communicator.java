@@ -5,7 +5,6 @@ import telnetd.PropertyHelper;
 
 import java.io.DataInputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 
 public abstract class Communicator implements Runnable {
@@ -19,8 +18,12 @@ public abstract class Communicator implements Runnable {
 
 	protected PrintStream out;
 	protected DataInputStream in;
+	protected Thread runningThread;
 
-
+	public Thread getThread()
+	{
+		return runningThread;
+	}
 
 	public String getName() {
 		return name;
@@ -30,10 +33,9 @@ public abstract class Communicator implements Runnable {
 		return isSocketAdminConsole(server);
 	}
 
-	protected synchronized void persistData(String data)
-	{
-		String outputData = String.format("#\r\n%s->%s\r\n%s\r\n#\r\n", name, PropertyHelper.getTimeStamp(),data ) ;
-		persistentDataStream.printf( outputData );
+	protected synchronized void persistData(String data) {
+		String outputData = String.format("#\r\n%s->%s\r\n%s#\r\n", name, PropertyHelper.getTimeStamp(), data);
+		persistentDataStream.printf(outputData);
 	}
 
 	public abstract String processInput(String input);
@@ -50,7 +52,6 @@ public abstract class Communicator implements Runnable {
 
 	public static String getNameFromSocket(Socket socket) {
 		String name = socket.getRemoteSocketAddress().toString();
-		name = name.split(":")[0];
 		name = name.substring(1);
 		return name;
 	}
@@ -59,7 +60,7 @@ public abstract class Communicator implements Runnable {
 	public Communicator(Socket socket, PrintStream persistentDataStream) {
 		server = socket;
 		name = getNameFromSocket(socket);
-		this.persistentDataStream = persistentDataStream ;
+		this.persistentDataStream = persistentDataStream;
 	}
 
 	public static boolean isSocketAdminConsole(Socket socket) {
@@ -72,6 +73,7 @@ public abstract class Communicator implements Runnable {
 
 
 		try {
+			runningThread = Thread.currentThread();
 			// Get input from the client
 			in = new DataInputStream(server.getInputStream());
 			out = new PrintStream(server.getOutputStream());
@@ -83,8 +85,15 @@ public abstract class Communicator implements Runnable {
 			for (int i = 0; i < loopCount && loop; i++) {
 				beforeLoopNumber(i);
 				out.print(PROMPT);
-				while ((line = in.readLine()) != null && !quitLoop()) {
-					if (line.equalsIgnoreCase("bye")) {
+				while (!quitLoop()) {
+
+					line = in.readLine();
+					if (line == null) {
+						break;
+					}
+					line = line.trim();
+
+					if (line.endsWith("bye") || line.endsWith("BYE")) {
 						loop = false;
 						break;
 					}
@@ -95,6 +104,7 @@ public abstract class Communicator implements Runnable {
 				}
 				afterLoopNumber(i);
 			}
+			System.out.printf("%s DONE\r\n", name);
 			server.close();
 		} catch (Exception e) {
 			e.printStackTrace();
