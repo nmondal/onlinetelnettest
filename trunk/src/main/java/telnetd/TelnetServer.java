@@ -1,9 +1,7 @@
 package telnetd;
 
-import telnetd.communicator.AdminClient;
-import telnetd.communicator.Communicator;
-import telnetd.communicator.QuestionCommunicator;
-
+import telnetd.auth.Session;
+import telnetd.auth.Authentication;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileOutputStream;
@@ -28,7 +26,7 @@ public class TelnetServer {
 
 	private int port = PORT;
 	private int maxConnections = MAX_CON;
-	public static ArrayList<Communicator > clientList;
+	public static ArrayList<Session > clientList;
 	private PrintStream persistentStorage;
 
 	public PrintStream getPersistentStorage()
@@ -40,13 +38,7 @@ public class TelnetServer {
 		return false;
 	}
 
-	public static Communicator createCommunicator(Socket socket, PrintStream stream) {
-		if (Communicator.isSocketAdminConsole(socket)) {
-			return new AdminClient(socket,stream);
-		} else {
-			return new QuestionCommunicator(socket,stream );
-		}
-	}
+
 
 	public synchronized static String getStats() {
 		StringBuffer sbuf = new StringBuffer();
@@ -55,9 +47,9 @@ public class TelnetServer {
 		sbuf.append("IP\t\t:   IS Client Active ?");
 		sbuf.append("\r\n");
 
-		for (Communicator com : clientList) {
-			sbuf.append(com.getName() + " : ");
-			sbuf.append( com.getThread().isAlive());
+		for (Session session : clientList) {
+			sbuf.append(session.getName() + " : ");
+			sbuf.append( session.getThread().isAlive());
 			sbuf.append("\r\n");
 		}
 		return sbuf.toString();
@@ -89,13 +81,13 @@ public class TelnetServer {
 			while ((i++ < maxConnections) || (maxConnections == 0)) {
 
 				server = listener.accept();
-				Communicator communicator = createCommunicator(server, this.persistentStorage );
+				Session session = new Session(server, this.persistentStorage );
 
-				new Thread(communicator).start();
+				new Thread(session).start();
 
-				String name = communicator.getName();
+				String name = session.getName();
 				System.out.printf("%s STARTED\r\n", name );
-				clientList.add( communicator );
+				clientList.add( session );
 				doGC();
 
 			}
@@ -109,13 +101,12 @@ public class TelnetServer {
 	{
 		if ( clientList.size() >  GC_BASELINE )
 		{
-			ArrayList<Communicator> tmp = new ArrayList<>();
-			for ( Communicator com : clientList )
+			ArrayList<Session> tmp = new ArrayList<>();
+			for ( Session session : clientList )
 			{
-				Thread t = com.getThread();
-				if ( t== null || t.isAlive() )
+				if ( session.getClientType() != Session.ClientType.UnAuthorized )
 				{
-					tmp.add(com);
+					tmp.add(session);
 				}
 			}
 			clientList.clear();
@@ -131,6 +122,7 @@ public class TelnetServer {
 					RESULTS_REPO , PropertyHelper.getTimeStampAsValidFileName() ) );
 			FileOutputStream fout = new FileOutputStream( file.getCanonicalPath() , true );
 			persistentStorage = new PrintStream(fout , true );
+			Authentication.loadAuthMap();
 			System.out.printf( "Started writing logs and results to file : %s\r\n", file.getCanonicalPath() );
 
 		}catch (Exception e)
@@ -145,6 +137,6 @@ public class TelnetServer {
 	}
 
 	public TelnetServer() {
-		this(PORT, MAX_CON);
+		this(PORT);
 	}
 }

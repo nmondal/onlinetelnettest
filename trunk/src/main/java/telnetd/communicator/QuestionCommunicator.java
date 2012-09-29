@@ -1,5 +1,6 @@
 package telnetd.communicator;
 
+import telnetd.PropertyHelper;
 import telnetd.Question;
 import java.io.*;
 import java.net.Socket;
@@ -9,13 +10,14 @@ import java.net.Socket;
  */
 public class QuestionCommunicator extends Communicator {
 
-
+	public static final boolean SKIP_SECTION =
+			PropertyHelper.serverProperties.getBooleanDefault("SKIP_SECTION" , true) ;
 
 	private int cur_ans_no = -1;
 	private char[] answers = null;
 	private boolean timerExpired = false;
 	private int currentSection = 0;
-
+	private boolean skipSection = false;
 
 	private String formatResult() {
 		StringBuffer ret = new StringBuffer( "Section " + currentSection );
@@ -85,6 +87,12 @@ public class QuestionCommunicator extends Communicator {
 		} catch (Exception e) {
 		}
 		if (jump) {
+		}else if ( input.equalsIgnoreCase("ss")){
+		    if ( SKIP_SECTION )
+		    {
+			    skipSection = true ;
+			    return "Skipping Section.\r\n" ;
+		    }
 		} else if (input.equalsIgnoreCase("l")) {
 			return formatResult();
 		} else if (input.equalsIgnoreCase("p")) {
@@ -140,6 +148,8 @@ public class QuestionCommunicator extends Communicator {
 
 	@Override
 	public void beforeLoopNumber(int loopNumber) {
+		cur_ans_no = -1;
+		skipSection = false;
 		currentSection = loopNumber;
 		this.answers = new char[Question.questionSections.get(currentSection).size()];
 
@@ -157,9 +167,13 @@ public class QuestionCommunicator extends Communicator {
 	@Override
 	public boolean quitLoop() {
 		if (timerExpired) {
-			out.print("Times Up For This Section!\r\n");
+			out.println("Times Up For This Section!");
 		}
-		return timerExpired;
+		if ( skipSection )
+		{
+			out.println("Really want to Skip Section? Fine.");
+		}
+		return (timerExpired || skipSection );
 	}
 
 	public QuestionCommunicator(Socket server, PrintStream persistentDataStream) {

@@ -2,6 +2,7 @@ package telnetd.communicator;
 
 
 import telnetd.PropertyHelper;
+import telnetd.auth.Authentication;
 
 import java.io.DataInputStream;
 import java.io.PrintStream;
@@ -12,29 +13,23 @@ public abstract class Communicator implements Runnable {
 	public static final String ADMIN_CLIENT = "127.0.0.1";
 	public static final String PROMPT = ">";
 	protected Socket server;
-	protected String name;
+
 
 	protected PrintStream persistentDataStream;
 
 	protected PrintStream out;
 	protected DataInputStream in;
-	protected Thread runningThread;
 
-	public Thread getThread()
+	protected String userName;
+	public void setUserName(String uName)
 	{
-		return runningThread;
+		userName  = uName ;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public boolean isAdminConsole() {
-		return isSocketAdminConsole(server);
-	}
 
 	protected synchronized void persistData(String data) {
-		String outputData = String.format("#\r\n%s->%s\r\n%s#\r\n", name, PropertyHelper.getTimeStamp(), data);
+		String outputData = String.format("#\r\n%s->%s\r\n%s#\r\n",
+				userName, PropertyHelper.getTimeStamp(), data);
 		persistentDataStream.printf(outputData);
 	}
 
@@ -50,22 +45,12 @@ public abstract class Communicator implements Runnable {
 
 	public abstract boolean quitLoop();
 
-	public static String getNameFromSocket(Socket socket) {
-		String name = socket.getRemoteSocketAddress().toString();
-		name = name.substring(1);
-		return name;
-	}
+
 
 
 	public Communicator(Socket socket, PrintStream persistentDataStream) {
 		server = socket;
-		name = getNameFromSocket(socket);
 		this.persistentDataStream = persistentDataStream;
-	}
-
-	public static boolean isSocketAdminConsole(Socket socket) {
-		String name = getNameFromSocket(socket);
-		return name.equalsIgnoreCase(ADMIN_CLIENT);
 	}
 
 	@Override
@@ -73,10 +58,11 @@ public abstract class Communicator implements Runnable {
 
 
 		try {
-			runningThread = Thread.currentThread();
+
 			// Get input from the client
 			in = new DataInputStream(server.getInputStream());
 			out = new PrintStream(server.getOutputStream());
+			out.printf("Welcome...%s\r\n", userName );
 			String welcomeMessage = getGlobalWelcomeText();
 			out.println(welcomeMessage);
 			int loopCount = getLoopCount();
@@ -104,8 +90,6 @@ public abstract class Communicator implements Runnable {
 				}
 				afterLoopNumber(i);
 			}
-			System.out.printf("%s DONE\r\n", name);
-			server.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
