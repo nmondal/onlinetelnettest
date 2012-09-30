@@ -21,7 +21,7 @@ public class TelnetServer {
 	public static final int PORT = PropertyHelper.serverProperties.getIntegerDefault("PORT", 4444);
 	public static final int MAX_CON = PropertyHelper.serverProperties.getIntegerDefault("MAX_CON", 1000);
 	public static String RESULTS_REPO =
-			PropertyHelper.serverProperties.getPropertyDefault("RESULTS_REPO", "../results");
+			PropertyHelper.serverProperties.getPropertyDefault("RESULT_REPO", "../results");
 	public static final int GC_BASELINE = (int) MAX_CON / 3 ;
 
 	private int port = PORT;
