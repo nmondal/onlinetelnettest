@@ -58,6 +58,11 @@ public final class PropertyHelper {
 		String value = getPropertyDefault(keyName, new Double(defaultValue).toString());
 		return Double.parseDouble(value);
 	}
+	public Enum getEnumDefault( String keyName, Enum enumObject  )
+	{
+		String value = getPropertyDefault(keyName, enumObject.toString() );
+		return Enum.valueOf( enumObject.getClass(), value );
+	}
 
 	public static PropertyHelper serverProperties = new PropertyHelper("../server.properties");
 }
