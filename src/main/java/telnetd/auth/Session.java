@@ -5,6 +5,7 @@ import telnetd.communicator.AdminClient;
 import telnetd.communicator.Communicator;
 import telnetd.communicator.QuestionCommunicator;
 
+import java.io.DataInputStream;
 import java.io.PrintStream;
 import java.net.Socket;
 
@@ -12,17 +13,23 @@ public class Session implements Runnable {
 
 	public static final String ADMIN_NAME = "Administrator";
 
+
+	protected PrintStream out;
+	protected DataInputStream in;
+
 	public static enum ClientType {
 		User,
 		Admin,
 		UnAuthorized,
 		Unknown
 	}
+
 	public static String getIdentityFromSocket(Socket socket) {
 		String name = socket.getRemoteSocketAddress().toString();
 		name = name.substring(1);
 		return name;
 	}
+
 	public static Communicator createCommunicator(ClientType clientType, Socket socket, PrintStream stream) {
 		switch (clientType) {
 			case User:
@@ -36,10 +43,11 @@ public class Session implements Runnable {
 	}
 
 	protected ClientType clientType;
-	public ClientType getClientType()
-	{
+
+	public ClientType getClientType() {
 		return clientType;
 	}
+
 	protected Socket socket;
 	protected PrintStream persistentDataStream;
 
@@ -47,63 +55,65 @@ public class Session implements Runnable {
 
 	protected Authentication authentication;
 	protected String ipAddress;
-	public String getIpAddress()
-	{
+
+	public String getIpAddress() {
 		return ipAddress;
 	}
+
 	public String getName() {
-		if ( authentication != null)
-		{
-			return String.format( "%s@%s", authentication.getUserName() , ipAddress);
-		}
-		else
-		{
-			return String.format( "unknown@%s" , ipAddress);
+		if (authentication != null) {
+			return String.format("%s@%s", authentication.getUserName(), ipAddress);
+		} else {
+			return String.format("unknown@%s", ipAddress);
 		}
 	}
+
 	protected synchronized ClientType login() {
 		ClientType cType = ClientType.UnAuthorized;
-		 try
-		 {
-			 socket.getOutputStream().write("Login:".getBytes() );
-			 byte[] responseBytes = new byte[32];
-			 socket.getInputStream().read(responseBytes);
-			 String login = new String( responseBytes );
-			 login = login.trim();
-			 socket.getOutputStream().write("Password:".getBytes() );
-			 socket.getInputStream().read(responseBytes);
-			 String pass = new String( responseBytes );
-			 pass = pass.trim();
+		try {
+			in = new DataInputStream(socket.getInputStream());
+			out = new PrintStream(socket.getOutputStream());
+			String login = "";
+			while (true) {
+				out.print("Login:");
+				login = in.readLine();
+				if (login != null) {
+					login = login.trim();
+					break;
+				}
+			}
+			out.print("Password:");
+			String pass = in.readLine();
+			if (pass != null) {
+				pass = pass.trim();
+			} else {
+				pass = "";
+			}
+			authentication = Authentication.authenticationHashMap.get(login.trim());
+			if (authentication != null) {
+				if (authentication.getPassWord().equals(pass)) {
+					if (authentication.getUserName().equalsIgnoreCase(ADMIN_NAME)) {
+						cType = ClientType.Admin;
+					} else {
+						cType = ClientType.User;
+					}
+					System.out.printf("%s Logged in.\r\n", getName());
+				}
+			}
 
-			 authentication = Authentication.authenticationHashMap.get( login.trim() );
-			 if ( authentication != null )
-			 {
-				 if ( authentication.getPassWord().equals( pass ) )
-				 {
-					 if ( authentication.getUserName().equalsIgnoreCase( ADMIN_NAME ))
-					 {
-						 cType = ClientType.Admin;
-					 }
-					 else
-					 {
-						 cType = ClientType.User ;
-					 }
-					 System.out.printf("%s Logged in.\r\n" , getName());
-				 }
-			 }
-
-		 }catch (Exception e)
-		 {
-			 e.printStackTrace();
-		 }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		return cType;
 	}
+
 	protected Thread runningThread;
-	public Thread getThread()
-	{
+
+	public Thread getThread() {
 		return runningThread;
 	}
+
 	@Override
 	public void run() {
 		try {
@@ -111,7 +121,7 @@ public class Session implements Runnable {
 			clientType = login();
 			communicator = createCommunicator(clientType, socket, persistentDataStream);
 			if (communicator != null) {
-				communicator.setUserName(  authentication.getUserName() );
+				communicator.setUserName(authentication.getUserName());
 				communicator.run();
 
 			} else {
@@ -120,17 +130,16 @@ public class Session implements Runnable {
 			socket.close();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		finally {
-			System.out.printf("%s DONE \r\n", getName() );
+		} finally {
+			System.out.printf("%s DONE \r\n", getName());
 
 		}
 	}
-	public Session ( Socket s, PrintStream printStream)
-	{
-		this.clientType = ClientType.Unknown ;
+
+	public Session(Socket s, PrintStream printStream) {
+		this.clientType = ClientType.Unknown;
 		this.socket = s;
-		this.persistentDataStream = printStream ;
-		this.ipAddress = getIdentityFromSocket( socket);
+		this.persistentDataStream = printStream;
+		this.ipAddress = getIdentityFromSocket(socket);
 	}
 }
