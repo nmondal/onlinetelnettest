@@ -2,8 +2,12 @@ package telnetd.communicator;
 
 import telnetd.PropertyHelper;
 import telnetd.Question;
-import java.io.*;
+
+import java.io.PrintStream;
 import java.net.Socket;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+
 
 /**
  * @author nmondal
@@ -11,16 +15,44 @@ import java.net.Socket;
 public class QuestionCommunicator extends Communicator {
 
 	public static final boolean SKIP_SECTION =
-			PropertyHelper.serverProperties.getBooleanDefault("SKIP_SECTION" , true) ;
+			PropertyHelper.serverProperties.getBooleanDefault("SKIP_SECTION", true);
+
+	public static final boolean RANDOMIZE_QUESTIONS =
+			PropertyHelper.serverProperties.getBooleanDefault("RANDOMIZE_QUESTIONS", false);
+
+	static SecureRandom random = new SecureRandom();
+
+	public static short[] shuffleQuestions(short size, boolean shuffle) {
+		short[] arr = new short[size];
+		if (shuffle) {
+			ArrayList<Short> list = new ArrayList<>();
+
+			for (short i = 0; i < size; i++) {
+				list.add(i);
+			}
+
+			for (short i = 0; i < size; i++) {
+				short inx = (short) random.nextInt(size - i);
+				arr[i] = list.get(inx);
+				list.remove(inx);
+			}
+		} else {
+			for (short i = 0; i < size; i++) {
+				arr[i] = i;
+			}
+		}
+		return arr;
+	}
 
 	private int cur_ans_no = -1;
 	private char[] answers = null;
+	private short[] question_numbers = null;
 	private boolean timerExpired = false;
 	private int currentSection = 0;
 	private boolean skipSection = false;
 
 	private String formatResult() {
-		StringBuffer ret = new StringBuffer( "Section " + currentSection );
+		StringBuffer ret = new StringBuffer("Section " + currentSection);
 		ret.append("\r\n");
 		for (int i = 0; i < answers.length; i++) {
 			ret.append(String.format("%2d ", i + 1));
@@ -40,7 +72,7 @@ public class QuestionCommunicator extends Communicator {
 
 	private void resultOutput(int section) {
 		currentSection = section;
-		persistData(  formatResult() );
+		persistData(formatResult());
 	}
 
 	public void SetTimerExpired() {
@@ -51,16 +83,16 @@ public class QuestionCommunicator extends Communicator {
 		if (cur_ans_no - 1 >= 0) {
 			cur_ans_no--;
 		} else {
-			cur_ans_no = 0 ;
+			cur_ans_no = 0;
 			out.println("Already at the first Question!");
 		}
 	}
 
 	private void goNext() {
-		if (cur_ans_no < answers.length - 1 ) {
+		if (cur_ans_no < answers.length - 1) {
 			cur_ans_no++;
 		} else {
-			cur_ans_no =  answers.length - 1 ;
+			cur_ans_no = answers.length - 1;
 			out.println("Already at the Last Question!");
 		}
 	}
@@ -87,12 +119,11 @@ public class QuestionCommunicator extends Communicator {
 		} catch (Exception e) {
 		}
 		if (jump) {
-		}else if ( input.equalsIgnoreCase("ss")){
-		    if ( SKIP_SECTION )
-		    {
-			    skipSection = true ;
-			    return "Skipping Section.\r\n" ;
-		    }
+		} else if (input.equalsIgnoreCase("ss")) {
+			if (SKIP_SECTION) {
+				skipSection = true;
+				return "Skipping Section.\r\n";
+			}
 		} else if (input.equalsIgnoreCase("l")) {
 			return formatResult();
 		} else if (input.equalsIgnoreCase("p")) {
@@ -101,19 +132,18 @@ public class QuestionCommunicator extends Communicator {
 			goNext();
 		} else {
 			try {
-				answers[cur_ans_no] = input.charAt(input.length() - 1);
-				out.printf("Ans. to Question %d is set to : %c\r\n" ,
-						cur_ans_no +1 ,answers[cur_ans_no] );
+				answers[ question_numbers[ cur_ans_no ] ] = input.charAt(input.length() - 1);
+				out.printf("Ans. to Question %d is set to : %c\r\n",
+						cur_ans_no + 1, answers[ question_numbers[ cur_ans_no ] ]);
 				goNext();
 			} catch (Exception e) {
 				out.println("Invalid Input.");
 			}
 		}
-		if ( cur_ans_no < 0 || cur_ans_no >= answers.length)
-		{
-			return "Please select a question no, or 'n' or 'p' \r\n" ;
+		if (cur_ans_no < 0 || cur_ans_no >= answers.length) {
+			return "Please select a question no, or 'n' or 'p' \r\n";
 		}
-		return Question.questionSections.get(this.currentSection).get(cur_ans_no).toString();
+		return Question.questionSections.get(this.currentSection).get( question_numbers[ cur_ans_no ] ).toString(cur_ans_no+1);
 
 	}
 
@@ -135,8 +165,8 @@ public class QuestionCommunicator extends Communicator {
 		buf.append("\r\n");
 		buf.append("To Start the test press  'n' , for the first question.");
 		buf.append("\r\n");
-		buf.append( String.format( "Timeout for Each Section is %d minute[s]",
-				SimpleTimerTask.SECTION_TIMEOUT_IN_MINUTES) );
+		buf.append(String.format("Timeout for Each Section is %d minute[s]",
+				SimpleTimerTask.SECTION_TIMEOUT_IN_MINUTES));
 		buf.append("\r\n");
 		return buf.toString();
 	}
@@ -152,6 +182,8 @@ public class QuestionCommunicator extends Communicator {
 		skipSection = false;
 		currentSection = loopNumber;
 		this.answers = new char[Question.questionSections.get(currentSection).size()];
+		this.question_numbers = shuffleQuestions( (short)answers.length , RANDOMIZE_QUESTIONS );
+
 
 		out.printf("Starting Section : %d\r\n", loopNumber + 1);
 		out.printf("Total Questions : %d\r\n", answers.length);
@@ -169,15 +201,14 @@ public class QuestionCommunicator extends Communicator {
 		if (timerExpired) {
 			out.println("Times Up For This Section!");
 		}
-		if ( skipSection )
-		{
+		if (skipSection) {
 			out.println("Really want to Skip Section? Fine.");
 		}
-		return (timerExpired || skipSection );
+		return (timerExpired || skipSection);
 	}
 
 	public QuestionCommunicator(Socket server, PrintStream persistentDataStream) {
-		super(server , persistentDataStream );
+		super(server, persistentDataStream);
 
 	}
 

@@ -19,7 +19,10 @@ public class Question {
 		String ret = String.format("[%d] \r\n %s\r\n", number, description);
 		return ret;
 	}
-
+	public String toString(int no) {
+		String ret = String.format("[%d] \r\n %s\r\n", no , description);
+		return ret;
+	}
 	public static ArrayList<ArrayList<Question>> questionSections;
 
 	public static void loadQuestions() {

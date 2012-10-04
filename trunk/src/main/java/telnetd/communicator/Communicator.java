@@ -10,7 +10,6 @@ import java.net.Socket;
 
 public abstract class Communicator implements Runnable {
 
-	public static final String ADMIN_CLIENT = "127.0.0.1";
 	public static final String PROMPT = ">";
 	protected Socket server;
 
