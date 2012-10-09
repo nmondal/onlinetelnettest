@@ -6,10 +6,17 @@ import telnetd.communicator.Communicator;
 import telnetd.communicator.QuestionCommunicator;
 
 import java.io.DataInputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.Socket;
 
 public class Session implements Runnable {
+
+	public static final char IAC = (char) 0xff;
+	public static final char WILL = (char) 0xfb;
+	public static final char WONT = (char) 0xfc;
+	public static final char ECHO = (char) 0x01;
+
 
 	public static final String ADMIN_NAME = "Administrator";
 
@@ -68,6 +75,42 @@ public class Session implements Runnable {
 		}
 	}
 
+	protected void stopEcho() throws Exception {
+		OutputStreamWriter pass_out = new OutputStreamWriter(socket.getOutputStream(), "ISO-8859-1");
+		pass_out.write(IAC);
+		pass_out.write(WILL);
+		pass_out.write(ECHO);
+		pass_out.flush();
+		in.skipBytes(3);
+	}
+
+	protected void startEcho() throws Exception {
+		OutputStreamWriter pass_out = new OutputStreamWriter(socket.getOutputStream(), "ISO-8859-1");
+		pass_out.write(IAC);
+		pass_out.write(WONT);
+		pass_out.write(ECHO);
+		pass_out.flush();
+		in.skipBytes(3);
+	}
+
+	public String getPassWord() {
+
+		String pass = "";
+		try {
+			stopEcho();
+			out.print("Password:");
+
+			pass = in.readLine();
+			if (pass != null) {
+				pass = pass.trim();
+			}
+			startEcho();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return pass;
+	}
+
 	protected synchronized ClientType login() {
 		ClientType cType = ClientType.UnAuthorized;
 		try {
@@ -82,13 +125,9 @@ public class Session implements Runnable {
 					break;
 				}
 			}
-			out.print("Password:");
-			String pass = in.readLine();
-			if (pass != null) {
-				pass = pass.trim();
-			} else {
-				pass = "";
-			}
+
+			String pass = getPassWord();
+
 			authentication = Authentication.authenticationHashMap.get(login.trim());
 			if (authentication != null) {
 				if (authentication.getPassWord().equals(pass)) {
