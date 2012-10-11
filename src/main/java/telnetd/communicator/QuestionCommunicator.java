@@ -51,20 +51,32 @@ public class QuestionCommunicator extends Communicator {
 	private int currentSection = 0;
 	private boolean skipSection = false;
 
-	private String formatResult() {
+	private String formatResult(boolean plain) {
 		StringBuffer ret = new StringBuffer("Section " + currentSection);
 		ret.append("\r\n");
 		for (int i = 0; i < answers.length; i++) {
 			ret.append(String.format("%2d ", i + 1));
 		}
 		ret.append("\r\n");
-		for (int i = 0; i < answers.length; i++) {
-			if (answers[i] != 0) {
-				ret.append(" " + answers[i] + " ");
-			} else {
-				ret.append(" * ");
-			}
+		if (plain) {
+			for (int i = 0; i < answers.length; i++) {
+				if (answers[i] != 0) {
+					ret.append(" " + answers[i] + " ");
+				} else {
+					ret.append(" * ");
+				}
 
+			}
+		} else {
+			for ( int i = 0 ; i < question_numbers.length; i++ )
+			{
+				if ( answers[ question_numbers[i] ] != 0  )
+				{
+					ret.append(" " + answers[ question_numbers[i] ] + " ");
+				} else {
+					ret.append(" * ");
+				}
+			}
 		}
 		ret.append("\r\n");
 		return ret.toString();
@@ -72,7 +84,7 @@ public class QuestionCommunicator extends Communicator {
 
 	private void resultOutput(int section) {
 		currentSection = section;
-		persistData(formatResult());
+		persistData(formatResult(true));
 	}
 
 	public void SetTimerExpired() {
@@ -125,16 +137,16 @@ public class QuestionCommunicator extends Communicator {
 				return "Skipping Section.\r\n";
 			}
 		} else if (input.equalsIgnoreCase("l")) {
-			return formatResult();
+			return formatResult(false);
 		} else if (input.equalsIgnoreCase("p")) {
 			goPrevious();
 		} else if (input.equalsIgnoreCase("n")) {
 			goNext();
 		} else {
 			try {
-				answers[ question_numbers[ cur_ans_no ] ] = input.charAt(input.length() - 1);
+				answers[question_numbers[cur_ans_no]] = input.charAt(input.length() - 1);
 				out.printf("Ans. to Question %d is set to : %c\r\n",
-						cur_ans_no + 1, answers[ question_numbers[ cur_ans_no ] ]);
+						cur_ans_no + 1, answers[question_numbers[cur_ans_no]]);
 				goNext();
 			} catch (Exception e) {
 				out.println("Invalid Input.");
@@ -143,7 +155,7 @@ public class QuestionCommunicator extends Communicator {
 		if (cur_ans_no < 0 || cur_ans_no >= answers.length) {
 			return "Please select a question no, or 'n' or 'p' \r\n";
 		}
-		return Question.questionSections.get(this.currentSection).get( question_numbers[ cur_ans_no ] ).toString(cur_ans_no+1);
+		return Question.questionSections.get(this.currentSection).get(question_numbers[cur_ans_no]).toString(cur_ans_no + 1);
 
 	}
 
@@ -182,7 +194,7 @@ public class QuestionCommunicator extends Communicator {
 		skipSection = false;
 		currentSection = loopNumber;
 		this.answers = new char[Question.questionSections.get(currentSection).size()];
-		this.question_numbers = shuffleQuestions( (short)answers.length , RANDOMIZE_QUESTIONS );
+		this.question_numbers = shuffleQuestions((short) answers.length, RANDOMIZE_QUESTIONS);
 
 
 		out.printf("Starting Section : %d\r\n", loopNumber + 1);
