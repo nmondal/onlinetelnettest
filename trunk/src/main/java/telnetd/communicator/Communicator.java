@@ -5,12 +5,13 @@ import telnetd.PropertyHelper;
 import telnetd.auth.Authentication;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
 
 public abstract class Communicator implements Runnable {
 
-	public static final String PROMPT = ">";
+	public static final String PROMPT =  "\r>";
 	protected Socket server;
 
 
@@ -44,7 +45,24 @@ public abstract class Communicator implements Runnable {
 
 	public abstract boolean quitLoop();
 
-
+	public String readResponse() throws IOException
+	{
+		StringBuffer buffer = new StringBuffer();
+		while ( true )
+		{
+			int v = in.read();
+			char c = (char)v;
+			out.print(c);
+			out.flush();
+			if ( c == '\r' || c == '\n')
+			{
+				in.skipBytes(1);
+				break;
+			}
+			buffer.append(c) ;
+		}
+		return buffer.toString();
+	}
 
 
 	public Communicator(Socket socket, PrintStream persistentDataStream) {
@@ -72,7 +90,7 @@ public abstract class Communicator implements Runnable {
 				out.print(PROMPT);
 				while (!quitLoop()) {
 
-					line = in.readLine();
+					line = readResponse();
 					if (line == null) {
 						break;
 					}
