@@ -52,16 +52,34 @@ public abstract class Communicator implements Runnable {
 		{
 			int v = in.read();
 			char c = (char)v;
-			out.print(c);
-			out.flush();
-			if ( c == '\r' || c == '\n')
+			if ( c == '\b' )
 			{
+				if ( buffer.length() > 0 )
+				{
+					buffer.deleteCharAt( buffer.length() - 1 );
+					out.write(new byte[] { 0x08, 0x20, 0x08 });
+				}
+				continue;
+			}
+			else if ( c == '\r' || c == '\n')
+			{
+				out.println("\r");
+				out.flush();
+
 				in.skipBytes(1);
 				break;
 			}
+			else if (  Character.isISOControl( c ) )
+			{
+				in.skipBytes(2);
+				continue;
+			}
+			out.print(c);
+			out.flush();
+
 			buffer.append(c) ;
 		}
-		return buffer.toString();
+		return buffer.toString() ;
 	}
 
 
@@ -79,7 +97,7 @@ public abstract class Communicator implements Runnable {
 			// Get input from the client
 			in = new DataInputStream(server.getInputStream());
 			out = new PrintStream(server.getOutputStream());
-			out.printf("Welcome...%s\r\n", userName );
+			out.printf("\r\nWelcome...%s\r\n", userName );
 			String welcomeMessage = getGlobalWelcomeText();
 			out.println(welcomeMessage);
 			int loopCount = getLoopCount();
@@ -101,7 +119,7 @@ public abstract class Communicator implements Runnable {
 						break;
 					}
 					String output = processInput(line);
-					out.println(output);
+					out.println("\r"  + output);
 					out.print(PROMPT);
 
 				}
