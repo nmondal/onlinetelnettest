@@ -197,8 +197,8 @@ public class QuestionCommunicator extends Communicator {
 		this.question_numbers = shuffleQuestions((short) answers.length, RANDOMIZE_QUESTIONS);
 
 
-		out.printf("Starting Section : %d\r\n", loopNumber + 1);
-		out.printf("Total Questions : %d\r\n", answers.length);
+		out.printf("\rStarting Section : %d\r\n", loopNumber + 1);
+		out.printf("\rTotal Questions : %d\r\n", answers.length);
 
 		SimpleTimerTask.setTimerOnCommunication(this);
 	}
@@ -211,10 +211,10 @@ public class QuestionCommunicator extends Communicator {
 	@Override
 	public boolean quitLoop() {
 		if (timerExpired) {
-			out.println("Times Up For This Section!");
+			out.println("\rTimes Up For This Section!");
 		}
 		if (skipSection) {
-			out.println("Really want to Skip Section? Fine.");
+			out.println("\rReally want to Skip Section? Fine.");
 		}
 		return (timerExpired || skipSection);
 	}
