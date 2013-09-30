@@ -45,6 +45,8 @@ public abstract class Communicator implements Runnable {
 
 	public abstract boolean quitLoop();
 
+    public abstract double timeLeft();
+
 	public String readResponse() throws IOException
 	{
 		StringBuffer buffer = new StringBuffer();
@@ -119,7 +121,8 @@ public abstract class Communicator implements Runnable {
 						break;
 					}
 					String output = processInput(line);
-					out.println("\r"  + output);
+					String toClient = String.format("\r%s [%.1f min left]\r", output ,timeLeft()) ;
+                    out.println(toClient);
 					out.print(PROMPT);
 
 				}
