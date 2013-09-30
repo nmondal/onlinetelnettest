@@ -52,12 +52,10 @@ public class QuestionCommunicator extends Communicator {
 	private boolean skipSection = false;
 
 	private String formatResult(boolean plain) {
-		StringBuffer ret = new StringBuffer("Section " + currentSection);
-		ret.append("\r\n");
-		for (int i = 0; i < answers.length; i++) {
-			ret.append(String.format("%2d ", i + 1));
-		}
-		ret.append("\r\n");
+		StringBuffer ret = new StringBuffer();
+
+        ret.append(currentSection);
+		ret.append(":");
 		if (plain) {
 			for (int i = 0; i < answers.length; i++) {
 				if (answers[i] != 0) {
@@ -78,7 +76,7 @@ public class QuestionCommunicator extends Communicator {
 				}
 			}
 		}
-		ret.append("\r\n");
+
 		return ret.toString();
 	}
 
@@ -224,9 +222,8 @@ public class QuestionCommunicator extends Communicator {
 		return (timerExpired || skipSection);
 	}
 
-	public QuestionCommunicator(Socket server, PrintStream persistentDataStream) {
-		super(server, persistentDataStream);
-
+	public QuestionCommunicator(Socket server, String fileLocation) throws Exception {
+		super(server, fileLocation );
 	}
 
 }

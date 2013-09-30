@@ -5,6 +5,7 @@ import telnetd.PropertyHelper;
 import telnetd.auth.Authentication;
 
 import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -28,7 +29,7 @@ public abstract class Communicator implements Runnable {
 
 
 	protected synchronized void persistData(String data) {
-		String outputData = String.format("#\r\n%s->%s\r\n%s#\r\n",
+		String outputData = String.format("%s#%s#%s\r\n",
 				userName, PropertyHelper.getTimeStamp(), data);
 		persistentDataStream.printf(outputData);
 	}
@@ -84,10 +85,13 @@ public abstract class Communicator implements Runnable {
 		return buffer.toString() ;
 	}
 
+    protected String persistentFile ;
 
-	public Communicator(Socket socket, PrintStream persistentDataStream) {
+	public Communicator(Socket socket, String location) throws Exception {
 		server = socket;
-		this.persistentDataStream = persistentDataStream;
+
+        this.persistentFile = location;
+		this.persistentDataStream = new PrintStream( new FileOutputStream(persistentFile,true) );
 	}
 
 	@Override

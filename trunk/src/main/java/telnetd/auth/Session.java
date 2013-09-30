@@ -37,12 +37,13 @@ public class Session implements Runnable {
 		return name;
 	}
 
-	public static Communicator createCommunicator(ClientType clientType, Socket socket, PrintStream stream) {
+	public static Communicator createCommunicator(ClientType clientType,
+                                                  Socket socket, String fileLocation) throws Exception{
 		switch (clientType) {
 			case User:
-				return new QuestionCommunicator(socket, stream);
+				return new QuestionCommunicator(socket, fileLocation);
 			case Admin:
-				return new AdminClient(socket, stream);
+				return new AdminClient(socket, fileLocation );
 			default:
 				break;
 		}
@@ -56,7 +57,7 @@ public class Session implements Runnable {
 	}
 
 	protected Socket socket;
-	protected PrintStream persistentDataStream;
+	protected String fileLocation;
 
 	protected Communicator communicator;
 
@@ -158,9 +159,9 @@ public class Session implements Runnable {
 		try {
 			runningThread = Thread.currentThread();
 			clientType = login();
-			communicator = createCommunicator(clientType, socket, persistentDataStream);
+			communicator = createCommunicator(clientType, socket, fileLocation);
 			if (communicator != null) {
-				communicator.setUserName(authentication.getUserName());
+				communicator.setUserName(authentication.getLoginName() );
 				communicator.run();
 
 			} else {
@@ -175,10 +176,10 @@ public class Session implements Runnable {
 		}
 	}
 
-	public Session(Socket s, PrintStream printStream) {
+	public Session(Socket s, String fileLocation) {
 		this.clientType = ClientType.Unknown;
 		this.socket = s;
-		this.persistentDataStream = printStream;
+		this.fileLocation = fileLocation;
 		this.ipAddress = getIdentityFromSocket(socket);
 	}
 }

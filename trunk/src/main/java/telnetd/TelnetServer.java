@@ -27,12 +27,9 @@ public class TelnetServer {
 	private int port = PORT;
 	private int maxConnections = MAX_CON;
 	public static ArrayList<Session > clientList;
-	private PrintStream persistentStorage;
+	private String storageLocation;
 
-	public PrintStream getPersistentStorage()
-	{
-		return persistentStorage;
-	}
+
 
 	public synchronized static boolean clearConnection(String name) {
 		return false;
@@ -81,7 +78,7 @@ public class TelnetServer {
 			while ((i++ < maxConnections) || (maxConnections == 0)) {
 
 				server = listener.accept();
-				Session session = new Session(server, this.persistentStorage );
+				Session session = new Session(server, this.storageLocation );
 
 				new Thread(session).start();
 
@@ -120,10 +117,9 @@ public class TelnetServer {
 		try{
 			File file = new File( String.format("%s/%s_Log.txt",
 					RESULTS_REPO , PropertyHelper.getTimeStampAsValidFileName() ) );
-			FileOutputStream fout = new FileOutputStream( file.getCanonicalPath() , true );
-			persistentStorage = new PrintStream(fout , true );
-			Authentication.loadAuthMap();
-			System.out.printf( "Started writing logs and results to file : %s\r\n", file.getCanonicalPath() );
+			storageLocation = file.getAbsolutePath();
+            Authentication.loadAuthMap();
+			System.out.printf( "Started writing logs and results to file : %s\r\n", file.getAbsolutePath() );
 
 		}catch (Exception e)
 		{
