@@ -109,6 +109,11 @@ public class QuestionCommunicator extends Communicator {
 		}
 	}
 
+    double timeLeft;
+    @Override
+    public double timeLeft(){
+        return timeLeft;
+    }
 
 	@Override
 	public String processInput(String input) {

@@ -21,6 +21,12 @@ public class SimpleTimerTask extends TimerTask {
 	private long startTime;
 	private QuestionCommunicator com;
 
+    public double minutesLeft(){
+        long curTime = System.currentTimeMillis() ;
+        double d =  (MAX_DIFF - curTime + startTime )/60000.0 ;
+        return d;
+    }
+
 	@Override
 	public void run() {
 
@@ -30,7 +36,7 @@ public class SimpleTimerTask extends TimerTask {
 			//Stop Timer.
 			this.cancel();
 		} else {
-
+            com.timeLeft = minutesLeft();
 		}
 
 	}
@@ -44,5 +50,6 @@ public class SimpleTimerTask extends TimerTask {
 		Timer timer = new Timer("Exam");
 		task.startTime = System.currentTimeMillis();
 		timer.scheduleAtFixedRate(task, 0, MAX_DIFF / 1000);
+        com.timeLeft = task.minutesLeft();
 	}
 }
