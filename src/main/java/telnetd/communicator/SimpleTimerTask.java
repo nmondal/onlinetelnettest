@@ -32,7 +32,7 @@ public class SimpleTimerTask extends TimerTask {
 
 		long l_cur = System.currentTimeMillis();
 		if (l_cur - startTime > MAX_DIFF) {
-			com.SetTimerExpired();
+			com.SetTimerExpired(true);
 			//Stop Timer.
 			this.cancel();
 		} else {
@@ -46,9 +46,10 @@ public class SimpleTimerTask extends TimerTask {
 	}
 
 	public static void setTimerOnCommunication(QuestionCommunicator com) {
-		SimpleTimerTask task = new SimpleTimerTask(com);
+        com.SetTimerExpired(false);
+        SimpleTimerTask task = new SimpleTimerTask(com);
 		Timer timer = new Timer("Exam");
-		task.startTime = System.currentTimeMillis();
+        task.startTime = System.currentTimeMillis();
 		timer.scheduleAtFixedRate(task, 0, MAX_DIFF / 1000);
         com.timeLeft = task.minutesLeft();
 	}
