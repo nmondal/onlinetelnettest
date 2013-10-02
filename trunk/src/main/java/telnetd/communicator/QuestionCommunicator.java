@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Date;
 
 
 /**
@@ -85,8 +86,8 @@ public class QuestionCommunicator extends Communicator {
 		persistData(formatResult(true));
 	}
 
-	public void SetTimerExpired() {
-		timerExpired = true;
+	public void SetTimerExpired(boolean expired ) {
+		timerExpired = expired;
 	}
 
 	private void goPrevious() {
@@ -202,8 +203,15 @@ public class QuestionCommunicator extends Communicator {
 
 		out.printf("\rStarting Section : %d\r\n", loopNumber + 1);
 		out.printf("\rTotal Questions : %d\r\n", answers.length);
+        out.printf("\rPress any key and enter to start Timer.\r\n");
+        try {
+            readResponse();
+        }catch (Exception e){
 
-		SimpleTimerTask.setTimerOnCommunication(this);
+        }
+
+        SimpleTimerTask.setTimerOnCommunication(this);
+        out.printf("Timer started at %s\r\n", new Date());
 	}
 
 	@Override
